@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScoreStatsFC - Football Data & Analytics</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1><i class="fas fa-futbol"></i> ScoreStatsFC</h1>
+                </div>
+                <nav class="nav">
+                    <a href="#" class="nav-link" data-page="home">Home</a>
+                    <a href="#" class="nav-link" data-page="leagues">Liga</a>
+                    <a href="#" class="nav-link" data-page="players">Pemain</a>
+                    <a href="#" class="nav-link" data-page="clubs">Klub</a>
+                    <a href="#" class="nav-link" data-page="transfers">Transfer</a>
+                </nav>
+                <div class="header-actions">
+                    <div class="search-container">
+                        <input type="text" id="searchInput" placeholder="Cari pemain, klub..." class="search-input">
+                        <i class="fas fa-search search-icon"></i>
+                        <div id="searchResults" class="search-results"></div>
+                    </div>
+                    <div class="auth-buttons">
+                        <button id="loginBtn" class="btn btn-outline">Login</button>
+                        <button id="registerBtn" class="btn btn-primary">Daftar</button>
+                        <button id="logoutBtn" class="btn btn-danger" style="display: none;">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Home Page -->
+            <div id="homePage" class="page active">
+                <div class="hero-section">
+                    <h2>Selamat Datang di ScoreStatsFC</h2>
+                    <p>Platform terlengkap untuk data sepak bola Eropa dengan analisis real-time</p>
+                </div>
+
+                <!-- League Selection -->
+                <div class="league-selector">
+                    <h3>Pilih Liga</h3>
+                    <div class="league-grid">
+                        <div class="league-card" data-league="premier">
+                            <img src="https://via.placeholder.com/100x100/1e40af/ffffff?text=PL" alt="Premier League">
+                            <h4>Premier League</h4>
+                            <p>20 Klub</p>
+                        </div>
+                        <div class="league-card" data-league="serie-a">
+                            <img src="https://via.placeholder.com/100x100/059669/ffffff?text=SA" alt="Serie A">
+                            <h4>Serie A</h4>
+                            <p>20 Klub</p>
+                        </div>
+                        <div class="league-card" data-league="bundesliga">
+                            <img src="https://via.placeholder.com/100x100/dc2626/ffffff?text=BL" alt="Bundesliga">
+                            <h4>Bundesliga</h4>
+                            <p>18 Klub</p>
+                        </div>
+                        <div class="league-card" data-league="laliga">
+                            <img src="https://via.placeholder.com/100x100/ea580c/ffffff?text=LL" alt="La Liga">
+                            <h4>La Liga</h4>
+                            <p>20 Klub</p>
+                        </div>
+                        <div class="league-card" data-league="ligue1">
+                            <img src="https://via.placeholder.com/100x100/7c3aed/ffffff?text=L1" alt="Ligue 1">
+                            <h4>Ligue 1</h4>
+                            <p>18 Klub</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date Selector -->
+                <div class="date-selector">
+                    <h3>Pilih Tanggal</h3>
+                    <div class="date-controls">
+                        <input type="date" id="dateSelect" class="date-input">
+                        <button id="todayBtn" class="btn btn-outline">Hari Ini</button>
+                        <button id="tomorrowBtn" class="btn btn-outline">Besok</button>
+                        <button id="weekBtn" class="btn btn-outline">Seminggu</button>
+                    </div>
+                </div>
+
+                <!-- Fixtures Display -->
+                <div id="fixturesContainer" class="fixtures-container"></div>
+            </div>
+
+            <!-- Leagues Page -->
+            <div id="leaguesPage" class="page">
+                <h2>Liga Eropa</h2>
+                <div class="leagues-grid">
+                    <div class="league-detail-card" data-league="premier">
+                        <div class="league-header">
+                            <img src="https://via.placeholder.com/80x80/1e40af/ffffff?text=PL" alt="Premier League">
+                            <div>
+                                <h3>Premier League</h3>
+                                <p>Inggris • 20 Klub</p>
+                            </div>
+                        </div>
+                        <div class="league-stats">
+                            <div class="stat">
+                                <span class="stat-label">Pertandingan</span>
+                                <span class="stat-value">380</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Musim</span>
+                                <span class="stat-value">2023/24</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="viewLeague('premier')">Lihat Detail</button>
+                    </div>
+                    <!-- Similar cards for other leagues -->
+                </div>
+            </div>
+
+            <!-- Players Page -->
+            <div id="playersPage" class="page">
+                <h2>Pemain Terbaik</h2>
+                <div class="players-grid" id="playersGrid"></div>
+            </div>
+
+            <!-- Clubs Page -->
+            <div id="clubsPage" class="page">
+                <h2>Klub Eropa</h2>
+                <div class="clubs-grid" id="clubsGrid"></div>
+            </div>
+
+            <!-- Transfers Page -->
+            <div id="transfersPage" class="page">
+                <h2>Transfer Terbaru</h2>
+                <div class="transfers-list" id="transfersList"></div>
+            </div>
+
+            <!-- Admin Panel -->
+            <div id="adminPage" class="page">
+                <h2>Admin Panel</h2>
+                <div class="admin-grid">
+                    <div class="admin-card">
+                        <i class="fas fa-plus-circle"></i>
+                        <h3>Tambah Pertandingan</h3>
+                        <p>Buat pertandingan baru</p>
+                        <button class="btn btn-primary" onclick="showAddFixture()">Tambah</button>
+                    </div>
+                    <div class="admin-card">
+                        <i class="fas fa-users"></i>
+                        <h3>Kelola Pemain</h3>
+                        <p>Update data pemain</p>
+                        <button class="btn btn-primary" onclick="showManagePlayers()">Kelola</button>
+                    </div>
+                    <div class="admin-card">
+                        <i class="fas fa-building"></i>
+                        <h3>Kelola Klub</h3>
+                        <p>Update data klub</p>
+                        <button class="btn btn-primary" onclick="showManageClubs()">Kelola</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Daftar</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="regUsername">Username</label>
+                    <input type="text" id="regUsername" required>
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">Email</label>
+                    <input type="email" id="regEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Password</label>
+                    <input type="password" id="regPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Daftar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>ScoreStatsFC</h3>
+                    <p>Platform terlengkap untuk data sepak bola Eropa</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Liga</h4>
+                    <ul>
+                        <li><a href="#">Premier League</a></li>
+                        <li><a href="#">Serie A</a></li>
+                        <li><a href="#">Bundesliga</a></li>
+                        <li><a href="#">La Liga</a></li>
+                        <li><a href="#">Ligue 1</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Fitur</h4>
+                    <ul>
+                        <li><a href="#">Live Score</a></li>
+                        <li><a href="#">Statistik</a></li>
+                        <li><a href="#">Transfer</a></li>
+                        <li><a href="#">Klasemen</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Kontak</h4>
+                    <p>support@scorestatsfc.com</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 ScoreStatsFC. Dibuat oleh Kevin Naufal Aryanto & Reiki Putra Darmawan.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
