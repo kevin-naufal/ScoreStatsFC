@@ -196,6 +196,8 @@ const mockData = {
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
+    setupRouter();
+    handleRoute();
 });
 
 function initializeApp() {
@@ -204,17 +206,19 @@ function initializeApp() {
     loadPlayers();
     loadClubs();
     loadTransfers();
+    loadHighlights();
     checkLoginStatus();
 }
 
 // Event Listeners
 function setupEventListeners() {
-    // Navigation
+    // Navigation (use hash routing)
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', function(e) {
-            e.preventDefault();
             const page = this.getAttribute('data-page');
-            showPage(page);
+            if (page) {
+                window.location.hash = `#${page}`;
+            }
         });
     });
 
@@ -255,6 +259,16 @@ function setupEventListeners() {
             performSearch(query);
         } else {
             hideSearchResults();
+        }
+    });
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            const q = this.value.trim();
+            if (q.length >= 2) {
+                setLastSearchQuery(q);
+                window.location.hash = '#search';
+                hideSearchResults();
+            }
         }
     });
 
@@ -307,6 +321,7 @@ function showPage(pageId) {
             if (currentLeague && currentDate) {
                 loadFixturesByDate(currentLeague, currentDate);
             }
+            loadHighlights();
             break;
         case 'leagues':
             loadLeaguesPage();
@@ -320,6 +335,41 @@ function showPage(pageId) {
         case 'transfers':
             loadTransfers();
             break;
+        case 'search':
+            renderSearchPage(getLastSearchQuery());
+            break;
+    }
+}
+
+// Router
+function setupRouter() {
+    window.addEventListener('hashchange', handleRoute);
+}
+
+function handleRoute() {
+    const hash = window.location.hash || '#home';
+    const [route, param] = hash.replace('#', '').split('/');
+
+    switch(route) {
+        case 'home':
+        case 'leagues':
+        case 'players':
+        case 'clubs':
+        case 'transfers':
+        case 'search':
+            showPage(route);
+            break;
+        case 'player':
+            renderPlayerDetail(Number(param));
+            break;
+        case 'team':
+            renderTeamDetail(Number(param));
+            break;
+        case 'match':
+            renderMatchDetail(Number(param));
+            break;
+        default:
+            showPage('home');
     }
 }
 
@@ -394,7 +444,13 @@ function loadFixturesByDate(leagueId, date) {
         return;
     }
 
-    const fixtures = mockData.fixtures[leagueId].filter(fixture => fixture.date === date);
+    // Try cache first
+    const cacheKey = `fixtures:${leagueId}:${date}`;
+    let fixtures = getCache(cacheKey);
+    if (!fixtures) {
+        fixtures = mockData.fixtures[leagueId].filter(fixture => fixture.date === date);
+        setCache(cacheKey, fixtures, 5 * 60 * 1000); // 5 minutes TTL
+    }
     const leagueName = mockData.leagues[leagueId].name;
 
     if (fixtures.length === 0) {
@@ -653,6 +709,8 @@ function performSearch(query) {
         }
     });
 
+    setLastSearchQuery(query);
+    setCache(`search:${query}`, results, 10 * 60 * 1000);
     displaySearchResults(results);
 }
 
@@ -684,9 +742,9 @@ function handleSearchResult(type, id) {
     document.getElementById('searchInput').value = '';
     
     if (type === 'player') {
-        showPlayerDetail(id);
+        window.location.hash = `#player/${id}`;
     } else if (type === 'club') {
-        showClubDetail(id);
+        window.location.hash = `#team/${id}`;
     }
 }
 
@@ -762,24 +820,15 @@ function checkLoginStatus() {
 
 // Detail Views
 function showFixtureDetail(fixtureId) {
-    showMessage(`Detail pertandingan ${fixtureId} akan ditampilkan`, 'success');
+    window.location.hash = `#match/${fixtureId}`;
 }
 
 function showPlayerDetail(playerId) {
-    const player = mockData.players.find(p => p.id === playerId);
-    if (player) {
-        showMessage(`Detail pemain ${player.name} akan ditampilkan`, 'success');
-    }
+    window.location.hash = `#player/${playerId}`;
 }
 
 function showClubDetail(clubId) {
-    // Find club in all leagues
-    let club = null;
-    Object.values(mockData.clubs).flat().find(c => c.id === clubId);
-    
-    if (club) {
-        showMessage(`Detail klub ${club.name} akan ditampilkan`, 'success');
-    }
+    window.location.hash = `#team/${clubId}`;
 }
 
 function viewLeague(leagueId) {
@@ -831,6 +880,136 @@ function showMessage(message, type) {
     setTimeout(() => {
         messageDiv.remove();
     }, 3000);
+}
+
+// Highlights (simple pick from finished fixtures today across leagues)
+function loadHighlights() {
+    const highlightsList = document.getElementById('highlightsList');
+    if (!highlightsList) return;
+    const today = new Date().toISOString().split('T')[0];
+    const items = [];
+    Object.keys(mockData.fixtures).forEach(leagueId => {
+        mockData.fixtures[leagueId]
+            .filter(f => f.date === today && f.status === 'finished')
+            .forEach(f => items.push({ ...f, leagueId }));
+    });
+    const top = (items.length ? items : Object.values(mockData.fixtures).flat().filter(f => f.status === 'finished')).slice(0, 5);
+    highlightsList.innerHTML = top.map(f => `
+        <div class="fixture-item finished" onclick="showFixtureDetail(${f.id})">
+            <div class="fixture-teams">
+                <span class="fixture-team">${f.home}</span>
+                <span class="fixture-score">${f.homeScore} - ${f.awayScore}</span>
+                <span class="fixture-team">${f.away}</span>
+            </div>
+            <div class="fixture-time">${f.time}</div>
+        </div>
+    `).join('');
+}
+
+// Search Page Renderer
+function renderSearchPage(query) {
+    const container = document.getElementById('searchResultsPage');
+    const summary = document.getElementById('searchSummary');
+    if (!container || !summary) return;
+    const cacheKey = `search:${query}`;
+    let results = getCache(cacheKey);
+    if (!results) {
+        // compute now if not cached (should be cached by typing)
+        const temp = [];
+        mockData.players.forEach(player => {
+            if (player.name.toLowerCase().includes(query.toLowerCase()) ||
+                player.club.toLowerCase().includes(query.toLowerCase())) {
+                temp.push({ type: 'player', id: player.id, name: player.name, subtitle: `${player.club} • ${player.position}` });
+            }
+        });
+        Object.values(mockData.clubs).flat().forEach(club => {
+            if (club.name.toLowerCase().includes(query.toLowerCase())) {
+                temp.push({ type: 'club', id: club.id, name: club.name, subtitle: club.manager });
+            }
+        });
+        results = temp;
+        setCache(cacheKey, results, 10 * 60 * 1000);
+    }
+    summary.textContent = `Menampilkan ${results.length} hasil untuk "${query}"`;
+    container.innerHTML = results.map(r => `
+        <div class="transfer-item" onclick="handleSearchResult('${r.type}', ${r.id})">
+            <div>
+                <div class="transfer-player">${r.name}</div>
+                <div style="color:#6b7280">${r.subtitle}</div>
+            </div>
+            <div><i class="fas fa-arrow-right"></i></div>
+        </div>
+    `).join('');
+}
+
+function getLastSearchQuery() {
+    return localStorage.getItem('lastSearchQuery') || '';
+}
+
+function setLastSearchQuery(q) {
+    localStorage.setItem('lastSearchQuery', q);
+}
+
+// Detail Renderers
+function renderPlayerDetail(playerId) {
+    const player = mockData.players.find(p => p.id === playerId);
+    showPage('player');
+    const el = document.getElementById('playerDetail');
+    if (!player || !el) return;
+    el.innerHTML = `
+        <h3>${player.name}</h3>
+        <p><strong>Klub:</strong> ${player.club}</p>
+        <p><strong>Posisi:</strong> ${player.position}</p>
+        <p><strong>Usia:</strong> ${player.age} tahun</p>
+        <p><strong>Nilai pasar:</strong> €${player.value}M</p>
+    `;
+}
+
+function renderTeamDetail(clubId) {
+    // find club across leagues
+    const allClubs = Object.values(mockData.clubs).flat();
+    const club = allClubs.find(c => c.id === clubId);
+    showPage('team');
+    const el = document.getElementById('teamDetail');
+    if (!club || !el) return;
+    el.innerHTML = `
+        <h3>${club.name}</h3>
+        <p><strong>Manajer:</strong> ${club.manager}</p>
+        <p><strong>Didirikan:</strong> ${club.founded}</p>
+    `;
+}
+
+function renderMatchDetail(fixtureId) {
+    // find fixture across leagues
+    const allFixtures = Object.values(mockData.fixtures).flat();
+    const fixture = allFixtures.find(f => f.id === fixtureId);
+    showPage('match');
+    const el = document.getElementById('matchDetail');
+    if (!fixture || !el) return;
+    el.innerHTML = `
+        <h3>${fixture.home} vs ${fixture.away}</h3>
+        <p><strong>Tanggal:</strong> ${formatDate(fixture.date)} ${fixture.time}</p>
+        <p><strong>Status:</strong> ${fixture.status}</p>
+        <p><strong>Skor:</strong> ${fixture.homeScore ?? '-'} - ${fixture.awayScore ?? '-'}</p>
+    `;
+}
+
+// Simple localStorage cache with TTL
+function setCache(key, value, ttlMs) {
+    const record = { v: value, e: Date.now() + ttlMs };
+    try { localStorage.setItem(key, JSON.stringify(record)); } catch (_) {}
+}
+
+function getCache(key) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const record = JSON.parse(raw);
+        if (Date.now() > record.e) { localStorage.removeItem(key); return null; }
+        return record.v;
+    } catch (_) {
+        return null;
+    }
 }
 
 // Add some CSS for selected league card

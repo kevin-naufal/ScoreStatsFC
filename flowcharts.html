@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScoreStatsFC Flowcharts</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <style>
+        :root{--bg:#0f172a;--card:#111827;--text:#e5e7eb;--muted:#9ca3af;--accent:#22d3ee}
+        *{box-sizing:border-box}
+        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Segoe UI Emoji,Segoe UI Symbol;background:linear-gradient(180deg,#0b1220,#0f172a);color:var(--text)}
+        header{padding:24px 20px;border-bottom:1px solid #1f2937;background:rgba(17,24,39,.6);backdrop-filter:blur(8px);position:sticky;top:0;z-index:10}
+        h1{margin:0;font-size:20px;letter-spacing:.3px}
+        main{max-width:1100px;margin:24px auto;padding:0 16px 48px}
+        .intro{color:var(--muted);margin:6px 0 22px;font-size:14px}
+        .grid{display:grid;grid-template-columns:1fr;gap:22px}
+        @media(min-width:900px){.grid{grid-template-columns:1fr}}
+        .card{background:var(--card);border:1px solid #1f2937;border-radius:14px;padding:18px 16px}
+        .card h2{margin:0 0 12px;font-size:16px;font-weight:600}
+        .legend{font-size:12px;color:var(--muted);margin:10px 0 0}
+        .mermaid{background:#0b1020;border:1px solid #1f2937;border-radius:10px;padding:14px;overflow:auto}
+        footer{margin-top:28px;color:var(--muted);font-size:12px}
+        a{color:var(--accent);text-decoration:none}
+        a:hover{text-decoration:underline}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        // Inisialisasi Mermaid dengan tema gelap yang kontras
+        mermaid.initialize({ startOnLoad: true, theme: 'dark', securityLevel: 'loose', fontFamily: 'Inter, system-ui, Segoe UI, Roboto' });
+    </script>
+</head>
+<body>
+    <header>
+        <h1>ScoreStatsFC — Flowcharts</h1>
+        <div class="intro">Gambaran alur website dan arsitektur data untuk perencanaan dan diskusi.</div>
+    </header>
+    <main>
+        <div class="grid">
+            <section class="card">
+                <h2>1) User Journey (High-level Flow)</h2>
+                <div class="mermaid">
+                flowchart LR
+                    A[User opens ScoreStatsFC] --> B{Landing visible?}
+                    B -->|Yes| C[Scan highlights & hero]
+                    C --> D[Search team/match/player]
+                    D --> E{Has results?}
+                    E -->|Yes| F[Open details page]
+                    F --> G[Interact: filters, charts]
+                    G --> H[Share/Bookmark]
+                    E -->|No| I[Empty state tips]
+                    I --> D
+                </div>
+                <div class="legend">Fokus pada alur utama dari kunjungan hingga eksplorasi statistik.</div>
+            </section>
+
+            <section class="card">
+                <h2>2) Site Map (Halaman & Navigasi)</h2>
+                <div class="mermaid">
+                flowchart TB
+                    Home[Home / Landing]
+                    Home --> S[Search]
+                    Home --> L[Live Scores]
+                    Home --> T[Teams]
+                    Home --> P[Players]
+                    Home --> M[Matches]
+                    Home --> A[About]
+
+                    S --> S_Results[Search Results]
+                    S_Results --> MatchPage[Match Details]
+                    S_Results --> TeamPage[Team Details]
+                    S_Results --> PlayerPage[Player Details]
+
+                    L --> MatchPage
+                    T --> TeamPage
+                    P --> PlayerPage
+                    M --> MatchPage
+
+                    TeamPage --> TeamStats[Team Stats & Trends]
+                    PlayerPage --> PlayerStats[Player Stats & Radar]
+                    MatchPage --> MatchStats[Match Timeline & xG]
+                </div>
+                <div class="legend">Struktur navigasi inti untuk konsistensi UX.</div>
+            </section>
+
+            <section class="card">
+                <h2>3) Data Flow (Client ↔ API)</h2>
+                <div class="mermaid">
+                sequenceDiagram
+                    autonumber
+                    participant U as User
+                    participant UI as Frontend (ScoreStatsFC)
+                    participant API as Public/Custom API
+                    participant Cache as Browser Cache
+
+                    U->>UI: Open page / trigger search
+                    UI->>Cache: Check cached query
+                    alt Cache hit
+                        Cache-->>UI: Return cached data
+                    else Cache miss
+                        UI->>API: GET /search?q=...
+                        API-->>UI: 200 OK (JSON)
+                        UI->>Cache: Store response (ttl)
+                    end
+                    UI->>U: Render charts, tables, timeline
+                    U->>UI: Apply filters/sort
+                    UI->>UI: Local state update + re-render
+                </div>
+                <div class="legend">Mekanisme pengambilan data dengan cache sisi-klien untuk respons cepat.</div>
+            </section>
+
+            <section class="card">
+                <h2>4) Komponen UI Utama</h2>
+                <div class="mermaid">
+                flowchart LR
+                    App[App Shell] --> Nav[Top Nav]
+                    App --> Router[Router]
+                    Router --> HomePage[Home]
+                    Router --> SearchPage[Search]
+                    Router --> TeamPage[Team Details]
+                    Router --> PlayerPage[Player Details]
+                    Router --> MatchPage[Match Details]
+
+                    HomePage --> Highlights[Highlights Widget]
+                    SearchPage --> SearchBar[Search Bar]
+                    SearchPage --> Results[List/Grid]
+                    TeamPage --> TeamHeader[Header]
+                    TeamPage --> TeamCharts[Charts]
+                    PlayerPage --> PlayerHeader
+                    PlayerPage --> RadarChart
+                    MatchPage --> Timeline[Event Timeline]
+                    MatchPage --> XGChart[xG Chart]
+                </div>
+                <div class="legend">Daftar komponen untuk memandu implementasi front-end.</div>
+            </section>
+        </div>
+
+        <footer>
+            Dibuat dengan Mermaid.js — diagram dapat diedit langsung di file ini.
+        </footer>
+    </main>
+</body>
+</html>
+
+

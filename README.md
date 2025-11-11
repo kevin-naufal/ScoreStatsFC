@@ -108,6 +108,23 @@ ScoreStatsFC/
 2. Buka file `index.html` di browser
 3. Website siap digunakan!
 
+### Ambil Data dari Kaggle (opsional)
+Gunakan Kaggle dataset sebagai sumber data (tanpa backend):
+
+1) Pasang Python dependency:
+```bash
+pip install kagglehub
+```
+
+2) Jalankan skrip unduh:
+```bash
+python scripts/python/kaggle_fetch.py
+```
+
+3) Skrip akan menaruh CSV di `public/data/players_top5_2324.csv`.
+Halaman Pemain/Klub akan mencoba membaca file ini terlebih dahulu (kalau ada), lalu fallback ke CSV `chelsea_*.csv` yang lama.
+
+
 ### GitHub Pages Deployment
 1. Upload semua file ke repository GitHub
 2. Enable GitHub Pages di repository settings
